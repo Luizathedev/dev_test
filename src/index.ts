@@ -34,12 +34,59 @@ const initializeDatabase = async () => {
 initializeDatabase();
 
 app.post('/users', async (req, res) => {
-// Crie o endpoint de users
+  const { firstName, lastName, email } = req.body;
+
+  if (!firstName || !lastName || !email) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  try {
+    const user = new User();
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.email = email;
+
+    const userRepository = AppDataSource.getRepository(User);
+    await userRepository.save(user);
+
+    return res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error creating user', error });
+  }
 });
 
+
 app.post('/posts', async (req, res) => {
-// Crie o endpoint de posts
+  const { title, description, userId } = req.body;
+
+  if (!title || !description || !userId) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  try {
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const post = new Post();
+    post.title = title;
+    post.description = description;
+    post.user = user;
+
+    const postRepository = AppDataSource.getRepository(Post);
+    await postRepository.save(post);
+
+    return res.status(201).json(post);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error creating post', error });
+  }
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
